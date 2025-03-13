@@ -17,7 +17,7 @@ import {
   MessageSquare,
   ChevronRight,
 } from "lucide-react";
-
+import Login from "./components/Login";
 type RubricCriterion = {
   id: string;
   name: string;
@@ -406,13 +406,6 @@ function App() {
     ? mockCanvasStudents.filter((student) => student.matched)
     : mockCanvasStudents;
 
-  const handleGoogleAuth = async () => {
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsAuthenticated(true);
-    setIsLoading(false);
-  };
-
   const handleLogout = () => {
     setIsAuthenticated(false);
     setSelectedAssignment(null);
@@ -577,25 +570,7 @@ function App() {
               </h1>
             </div>
             {!isAuthenticated ? (
-              <button
-                className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 ${
-                  isLoading ? "opacity-75 cursor-not-allowed" : ""
-                }`}
-                onClick={handleGoogleAuth}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <RefreshCw className="animate-spin h-5 w-5 mr-2" />
-                    Connecting...
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="h-5 w-5 mr-2" />
-                    Connect to Google Classroom
-                  </>
-                )}
-              </button>
+              <Login />
             ) : (
               <div className="flex items-center space-x-4">
                 <div className="flex items-center text-sm">

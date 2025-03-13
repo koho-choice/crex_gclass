@@ -1,1 +1,26 @@
 .env
+# Logs
+gclass_assistant_frontend/logs
+gclass_assistant_frontend/*.log
+gclass_assistant_frontend/npm-debug.log*
+gclass_assistant_frontend/yarn-debug.log*
+gclass_assistant_frontend/yarn-error.log*
+gclass_assistant_frontend/pnpm-debug.log*
+gclass_assistant_frontend/lerna-debug.log*
+
+gclass_assistant_frontend/node_modules
+gclass_assistant_frontend/dist
+gclass_assistant_frontend/dist-ssr
+gclass_assistant_frontend/*.local
+
+# Editor directories and files
+gclass_assistant_frontend/.vscode/*
+gclass_assistant_frontend/.vscode/extensions.json
+gclass_assistant_frontend/.idea 
+gclass_assistant_frontend/.DS_Store
+gclass_assistant_frontend/*.suo
+gclass_assistant_frontend/*.ntvs*
+gclass_assistant_frontend/*.njsproj
+gclass_assistant_frontend/*.sln
+gclass_assistant_frontend/*.sw?
+gclass_assistant_frontend/.env
