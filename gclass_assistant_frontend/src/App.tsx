@@ -16,8 +16,11 @@ import {
   EyeOff,
   MessageSquare,
   ChevronRight,
+  GraduationCap,
 } from "lucide-react";
 import Login from "./components/Login";
+import { useAuth } from "./context/AuthContext";
+import Courses from "./components/Courses";
 type RubricCriterion = {
   id: string;
   name: string;
@@ -72,8 +75,19 @@ type CanvasStudent = {
   matched?: boolean;
 };
 
+type Course = {
+  id: string;
+  name: string;
+  code: string;
+  section: string;
+  term: string;
+  studentCount: number;
+};
+
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, setIsAuthenticated, user } = useAuth();
+  // get the user name
+  const userName = user?.name;
   const [selectedAssignment, setSelectedAssignment] =
     useState<Assignment | null>(null);
   const [gradingStatus, setGradingStatus] = useState<GradingStatus>("pending");
@@ -90,6 +104,7 @@ function App() {
   const [uploadComplete, setUploadComplete] = useState(false);
   const [hideUnmatched, setHideUnmatched] = useState(false);
   const [showFeedback, setShowFeedback] = useState<string | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
   const mockRubric: RubricCriterion[] = [
     {
@@ -402,6 +417,33 @@ function App() {
     },
   ];
 
+  const mockCourses: Course[] = [
+    {
+      id: "1",
+      name: "Environmental Science",
+      code: "ENV101",
+      section: "A",
+      term: "Spring 2024",
+      studentCount: 28,
+    },
+    {
+      id: "2",
+      name: "Modern Literature",
+      code: "ENG202",
+      section: "B",
+      term: "Spring 2024",
+      studentCount: 32,
+    },
+    {
+      id: "3",
+      name: "World History",
+      code: "HIS101",
+      section: "C",
+      term: "Spring 2024",
+      studentCount: 25,
+    },
+  ];
+
   const filteredCanvasStudents = hideUnmatched
     ? mockCanvasStudents.filter((student) => student.matched)
     : mockCanvasStudents;
@@ -575,7 +617,7 @@ function App() {
               <div className="flex items-center space-x-4">
                 <div className="flex items-center text-sm">
                   <User className="h-5 w-5 text-gray-500 mr-2" />
-                  <span className="text-gray-700">Ms. Anderson</span>
+                  <span className="text-gray-700">{userName}</span>
                 </div>
                 <button
                   className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
@@ -603,455 +645,478 @@ function App() {
           </div>
         ) : (
           <>
-            <div className="bg-white rounded-lg shadow p-6 mb-8">
-              <h2 className="text-lg font-semibold mb-4">Select Assignment</h2>
-              <div className="grid gap-4">
-                {mockAssignments.map((assignment) => (
-                  <div
-                    key={assignment.id}
-                    className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                      selectedAssignment?.id === assignment.id
-                        ? "border-indigo-500 bg-indigo-50"
-                        : "border-gray-200 hover:border-indigo-300"
-                    }`}
-                    onClick={() => setSelectedAssignment(assignment)}
+            {!selectedCourse ? (
+              <Courses />
+            ) : (
+              <>
+                <div className="bg-white rounded-lg shadow p-6 mb-8">
+                  <button
+                    className="text-sm text-indigo-600 hover:text-indigo-800 mb-4"
+                    onClick={() => setSelectedCourse(null)}
                   >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="font-medium text-gray-900">
-                          {assignment.title}
-                        </h3>
-                        <p className="text-sm text-gray-500">
-                          {assignment.subject} • Due: {assignment.dueDate}
-                        </p>
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {assignment.submissions.length} submissions
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {selectedAssignment && (
-              <div className="bg-white rounded-lg shadow p-6 mb-8">
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      {selectedAssignment.title}
-                    </h2>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {selectedAssignment.subject} • Due:{" "}
-                      {selectedAssignment.dueDate}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <button
-                      className="text-sm text-indigo-600 hover:text-indigo-800"
-                      onClick={selectAllSubmissions}
-                    >
-                      Select All
-                    </button>
-                    <button
-                      className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md ${
-                        getSelectedCount() > 0
-                          ? "text-white bg-indigo-600 hover:bg-indigo-700"
-                          : "text-gray-400 bg-gray-100 cursor-not-allowed"
-                      }`}
-                      onClick={handleGradeSubmissions}
-                      disabled={getSelectedCount() === 0}
-                    >
-                      <FileCheck className="mr-2 h-5 w-5" />
-                      Grade Selected ({getSelectedCount()})
-                    </button>
-                  </div>
-                </div>
-
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-medium mb-4">Submissions</h3>
-                  <div className="space-y-4">
-                    {selectedAssignment.submissions.map((submission) => (
+                    &larr; Back to Courses
+                  </button>
+                  <h2 className="text-lg font-semibold mb-4">
+                    Select Assignment
+                  </h2>
+                  <div className="grid gap-4">
+                    {mockAssignments.map((assignment) => (
                       <div
-                        key={submission.id}
-                        className={`border rounded-lg p-4 transition-colors ${
-                          submission.selected
+                        key={assignment.id}
+                        className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                          selectedAssignment?.id === assignment.id
                             ? "border-indigo-500 bg-indigo-50"
-                            : "border-gray-200"
+                            : "border-gray-200 hover:border-indigo-300"
                         }`}
+                        onClick={() => setSelectedAssignment(assignment)}
                       >
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex items-start space-x-3">
-                            <input
-                              type="checkbox"
-                              checked={submission.selected || false}
-                              onChange={() =>
-                                toggleSubmissionSelection(submission.id)
-                              }
-                              className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                            />
-                            <div>
-                              <h4 className="font-medium text-gray-900">
-                                {submission.studentName}
-                              </h4>
-                              <p className="text-sm text-gray-500">
-                                {submission.studentEmail}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                Submitted: {formatDate(submission.submittedAt)}
-                              </p>
-                            </div>
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h3 className="font-medium text-gray-900">
+                              {assignment.title}
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                              {assignment.subject} • Due: {assignment.dueDate}
+                            </p>
                           </div>
-                          <div className="flex items-center space-x-4">
-                            {submission.grading || submission.regrading ? (
-                              <div className="flex items-center space-x-2 text-indigo-600">
-                                <Loader2 className="h-5 w-5 animate-spin" />
-                                <span className="text-sm">
-                                  {submission.regrading
-                                    ? "Regrading..."
-                                    : "Grading..."}
-                                </span>
-                              </div>
-                            ) : (
-                              <>
-                                <div className="flex items-center space-x-2">
-                                  <input
-                                    type="number"
-                                    className="w-20 px-3 py-1 border rounded-md"
-                                    value={submission.grade || ""}
-                                    placeholder="Grade"
-                                    readOnly
-                                  />
-                                  {submission.feedback && (
-                                    <button
-                                      className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors"
-                                      onClick={() =>
-                                        setShowFeedback(
-                                          showFeedback === submission.id
-                                            ? null
-                                            : submission.id
-                                        )
-                                      }
-                                    >
-                                      <MessageSquare className="h-4 w-4 mr-1" />
-                                      Feedback
-                                      <ChevronRight
-                                        className={`h-4 w-4 ml-1 transform transition-transform ${
-                                          showFeedback === submission.id
-                                            ? "rotate-90"
-                                            : ""
-                                        }`}
-                                      />
-                                    </button>
-                                  )}
-                                </div>
-                                <div className="relative">
-                                  <button
-                                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors"
-                                    onClick={() => {
-                                      setCurrentRegradeSubmission(
-                                        submission.id
-                                      );
-                                      setShowRegradeModal(true);
-                                    }}
-                                    onMouseEnter={() =>
-                                      setRegradeHovered(submission.id)
-                                    }
-                                    onMouseLeave={() => setRegradeHovered(null)}
-                                  >
-                                    <RefreshCw className="h-4 w-4 mr-1" />
-                                    Request Regrade
-                                  </button>
-                                  {regradeHovered === submission.id && (
-                                    <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded shadow-lg whitespace-nowrap">
-                                      Request AI to regrade this submission
-                                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-800"></div>
-                                    </div>
-                                  )}
-                                </div>
-                              </>
-                            )}
+                          <div className="text-sm text-gray-600">
+                            {assignment.submissions.length} submissions
                           </div>
                         </div>
-
-                        <div className="flex gap-2 ml-7">
-                          {submission.attachments.map((attachment, index) => (
-                            <span
-                              key={index}
-                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
-                            >
-                              {attachment}
-                            </span>
-                          ))}
-                        </div>
-
-                        {showFeedback === submission.id &&
-                          submission.feedback && (
-                            <div className="mt-4 ml-7 bg-gray-50 rounded-lg p-4">
-                              <h5 className="font-medium text-gray-900 mb-4">
-                                AI Feedback
-                              </h5>
-                              <div className="space-y-6">
-                                {submission.feedback.map((feedback) => {
-                                  const criterion =
-                                    selectedAssignment.rubric.find(
-                                      (c) => c.id === feedback.criterionId
-                                    );
-                                  return (
-                                    <div
-                                      key={feedback.criterionId}
-                                      className="space-y-2"
-                                    >
-                                      <div className="flex justify-between items-baseline">
-                                        <h6 className="font-medium text-gray-800">
-                                          {criterion?.name}
-                                        </h6>
-                                        <span className="text-sm text-gray-600">
-                                          {feedback.points}/
-                                          {criterion?.maxPoints} points
-                                        </span>
-                                      </div>
-                                      <p className="text-sm text-gray-600">
-                                        {criterion?.description}
-                                      </p>
-                                      <p className="text-sm text-gray-800">
-                                        {feedback.feedback}
-                                      </p>
-                                      {feedback.suggestions.length > 0 && (
-                                        <div className="mt-2">
-                                          <h6 className="text-sm font-medium text-gray-700 mb-1">
-                                            Suggestions for Improvement:
-                                          </h6>
-                                          <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                                            {feedback.suggestions.map(
-                                              (suggestion, index) => (
-                                                <li key={index}>
-                                                  {suggestion}
-                                                </li>
-                                              )
-                                            )}
-                                          </ul>
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
                       </div>
                     ))}
                   </div>
                 </div>
-              </div>
-            )}
 
-            {gradingStatus === "completed" && (
-              <div className="flex justify-end">
-                <button
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
-                  onClick={() => setShowCanvasModal(true)}
-                >
-                  <Upload className="mr-2 h-5 w-5" />
-                  Upload to Canvas
-                </button>
-              </div>
-            )}
+                {selectedAssignment && (
+                  <div className="bg-white rounded-lg shadow p-6 mb-8">
+                    <div className="flex justify-between items-start mb-6">
+                      <div>
+                        <h2 className="text-xl font-semibold text-gray-900">
+                          {selectedAssignment.title}
+                        </h2>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {selectedAssignment.subject} • Due:{" "}
+                          {selectedAssignment.dueDate}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <button
+                          className="text-sm text-indigo-600 hover:text-indigo-800"
+                          onClick={selectAllSubmissions}
+                        >
+                          Select All
+                        </button>
+                        <button
+                          className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md ${
+                            getSelectedCount() > 0
+                              ? "text-white bg-indigo-600 hover:bg-indigo-700"
+                              : "text-gray-400 bg-gray-100 cursor-not-allowed"
+                          }`}
+                          onClick={handleGradeSubmissions}
+                          disabled={getSelectedCount() === 0}
+                        >
+                          <FileCheck className="mr-2 h-5 w-5" />
+                          Grade Selected ({getSelectedCount()})
+                        </button>
+                      </div>
+                    </div>
 
-            {showCanvasModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold">
-                      Validate Canvas Class Information
-                    </h3>
+                    <div className="border-t pt-6">
+                      <h3 className="text-lg font-medium mb-4">Submissions</h3>
+                      <div className="space-y-4">
+                        {selectedAssignment.submissions.map((submission) => (
+                          <div
+                            key={submission.id}
+                            className={`border rounded-lg p-4 transition-colors ${
+                              submission.selected
+                                ? "border-indigo-500 bg-indigo-50"
+                                : "border-gray-200"
+                            }`}
+                          >
+                            <div className="flex justify-between items-start mb-3">
+                              <div className="flex items-start space-x-3">
+                                <input
+                                  type="checkbox"
+                                  checked={submission.selected || false}
+                                  onChange={() =>
+                                    toggleSubmissionSelection(submission.id)
+                                  }
+                                  className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                />
+                                <div>
+                                  <h4 className="font-medium text-gray-900">
+                                    {submission.studentName}
+                                  </h4>
+                                  <p className="text-sm text-gray-500">
+                                    {submission.studentEmail}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    Submitted:{" "}
+                                    {formatDate(submission.submittedAt)}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-4">
+                                {submission.grading || submission.regrading ? (
+                                  <div className="flex items-center space-x-2 text-indigo-600">
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                    <span className="text-sm">
+                                      {submission.regrading
+                                        ? "Regrading..."
+                                        : "Grading..."}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="flex items-center space-x-2">
+                                      <input
+                                        type="number"
+                                        className="w-20 px-3 py-1 border rounded-md"
+                                        value={submission.grade || ""}
+                                        placeholder="Grade"
+                                        readOnly
+                                      />
+                                      {submission.feedback && (
+                                        <button
+                                          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors"
+                                          onClick={() =>
+                                            setShowFeedback(
+                                              showFeedback === submission.id
+                                                ? null
+                                                : submission.id
+                                            )
+                                          }
+                                        >
+                                          <MessageSquare className="h-4 w-4 mr-1" />
+                                          Feedback
+                                          <ChevronRight
+                                            className={`h-4 w-4 ml-1 transform transition-transform ${
+                                              showFeedback === submission.id
+                                                ? "rotate-90"
+                                                : ""
+                                            }`}
+                                          />
+                                        </button>
+                                      )}
+                                    </div>
+                                    <div className="relative">
+                                      <button
+                                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors"
+                                        onClick={() => {
+                                          setCurrentRegradeSubmission(
+                                            submission.id
+                                          );
+                                          setShowRegradeModal(true);
+                                        }}
+                                        onMouseEnter={() =>
+                                          setRegradeHovered(submission.id)
+                                        }
+                                        onMouseLeave={() =>
+                                          setRegradeHovered(null)
+                                        }
+                                      >
+                                        <RefreshCw className="h-4 w-4 mr-1" />
+                                        Request Regrade
+                                      </button>
+                                      {regradeHovered === submission.id && (
+                                        <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded shadow-lg whitespace-nowrap">
+                                          Request AI to regrade this submission
+                                          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-800"></div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2 ml-7">
+                              {submission.attachments.map(
+                                (attachment, index) => (
+                                  <span
+                                    key={index}
+                                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                                  >
+                                    {attachment}
+                                  </span>
+                                )
+                              )}
+                            </div>
+
+                            {showFeedback === submission.id &&
+                              submission.feedback && (
+                                <div className="mt-4 ml-7 bg-gray-50 rounded-lg p-4">
+                                  <h5 className="font-medium text-gray-900 mb-4">
+                                    AI Feedback
+                                  </h5>
+                                  <div className="space-y-6">
+                                    {submission.feedback.map((feedback) => {
+                                      const criterion =
+                                        selectedAssignment.rubric.find(
+                                          (c) => c.id === feedback.criterionId
+                                        );
+                                      return (
+                                        <div
+                                          key={feedback.criterionId}
+                                          className="space-y-2"
+                                        >
+                                          <div className="flex justify-between items-baseline">
+                                            <h6 className="font-medium text-gray-800">
+                                              {criterion?.name}
+                                            </h6>
+                                            <span className="text-sm text-gray-600">
+                                              {feedback.points}/
+                                              {criterion?.maxPoints} points
+                                            </span>
+                                          </div>
+                                          <p className="text-sm text-gray-600">
+                                            {criterion?.description}
+                                          </p>
+                                          <p className="text-sm text-gray-800">
+                                            {feedback.feedback}
+                                          </p>
+                                          {feedback.suggestions.length > 0 && (
+                                            <div className="mt-2">
+                                              <h6 className="text-sm font-medium text-gray-700 mb-1">
+                                                Suggestions for Improvement:
+                                              </h6>
+                                              <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                                                {feedback.suggestions.map(
+                                                  (suggestion, index) => (
+                                                    <li key={index}>
+                                                      {suggestion}
+                                                    </li>
+                                                  )
+                                                )}
+                                              </ul>
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {gradingStatus === "completed" && (
+                  <div className="flex justify-end">
                     <button
-                      className="text-gray-400 hover:text-gray-500"
-                      onClick={() => {
-                        setShowCanvasModal(false);
-                        setUploadComplete(false);
-                      }}
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                      onClick={() => setShowCanvasModal(true)}
                     >
-                      <X className="h-5 w-5" />
+                      <Upload className="mr-2 h-5 w-5" />
+                      Upload to Canvas
                     </button>
                   </div>
+                )}
 
-                  {!uploadComplete ? (
-                    <>
-                      <div className="mb-4 flex justify-between items-center">
-                        <div className="flex items-center space-x-2 text-sm text-gray-500">
-                          <AlertCircle className="h-4 w-4" />
-                          <span>
-                            Please verify that the student information matches
-                            before uploading grades.
-                          </span>
+                {showCanvasModal && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+                      <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-lg font-semibold">
+                          Validate Canvas Class Information
+                        </h3>
+                        <button
+                          className="text-gray-400 hover:text-gray-500"
+                          onClick={() => {
+                            setShowCanvasModal(false);
+                            setUploadComplete(false);
+                          }}
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
+
+                      {!uploadComplete ? (
+                        <>
+                          <div className="mb-4 flex justify-between items-center">
+                            <div className="flex items-center space-x-2 text-sm text-gray-500">
+                              <AlertCircle className="h-4 w-4" />
+                              <span>
+                                Please verify that the student information
+                                matches before uploading grades.
+                              </span>
+                            </div>
+                            <button
+                              className={`flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                                hideUnmatched
+                                  ? "bg-indigo-100 text-indigo-700"
+                                  : "bg-gray-100 text-gray-700"
+                              }`}
+                              onClick={() => setHideUnmatched(!hideUnmatched)}
+                            >
+                              <EyeOff className="h-4 w-4 mr-2" />
+                              {hideUnmatched
+                                ? "Show Unmatched"
+                                : "Hide Unmatched"}
+                            </button>
+                          </div>
+
+                          <div className="border rounded-lg overflow-hidden">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Student
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Email
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Student ID
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Section
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {filteredCanvasStudents.map((student) => (
+                                  <tr key={student.id}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                      {student.name}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                      {student.email}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                      {student.studentId}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                      {student.section}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      {student.matched ? (
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                          <Check className="h-4 w-4 mr-1" />
+                                          Matched
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                          <AlertCircle className="h-4 w-4 mr-1" />
+                                          Not Found
+                                        </span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <div className="mt-6 flex justify-end">
+                            <button
+                              className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 ${
+                                uploadingToCanvas
+                                  ? "opacity-75 cursor-not-allowed"
+                                  : ""
+                              }`}
+                              onClick={handleUploadToCanvas}
+                              disabled={uploadingToCanvas}
+                            >
+                              {uploadingToCanvas ? (
+                                <>
+                                  <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                                  Uploading...
+                                </>
+                              ) : (
+                                <>
+                                  <Upload className="h-5 w-5 mr-2" />
+                                  Upload Grades
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center py-8">
+                          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                            <CheckCircle className="h-6 w-6 text-green-600" />
+                          </div>
+                          <h3 className="mt-4 text-lg font-medium text-gray-900">
+                            Upload Complete
+                          </h3>
+                          <p className="mt-1 text-sm text-gray-500">
+                            All grades have been successfully uploaded to Canvas
+                          </p>
                         </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {showRegradeModal && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-lg w-full">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold">
+                          Request Regrade
+                        </h3>
                         <button
-                          className={`flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                            hideUnmatched
-                              ? "bg-indigo-100 text-indigo-700"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
-                          onClick={() => setHideUnmatched(!hideUnmatched)}
+                          className="text-gray-400 hover:text-gray-500"
+                          onClick={() => setShowRegradeModal(false)}
                         >
-                          <EyeOff className="h-4 w-4 mr-2" />
-                          {hideUnmatched ? "Show Unmatched" : "Hide Unmatched"}
+                          <X className="h-5 w-5" />
                         </button>
                       </div>
 
-                      <div className="border rounded-lg overflow-hidden">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Student
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Email
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Student ID
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Section
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Status
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredCanvasStudents.map((student) => (
-                              <tr key={student.id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  {student.name}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {student.email}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {student.studentId}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {student.section}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  {student.matched ? (
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                      <Check className="h-4 w-4 mr-1" />
-                                      Matched
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                      <AlertCircle className="h-4 w-4 mr-1" />
-                                      Not Found
-                                    </span>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">
+                            Reason for Regrade
+                          </label>
+                          <textarea
+                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            rows={3}
+                            value={regradeReason}
+                            onChange={(e) => setRegradeReason(e.target.value)}
+                            placeholder="Explain why you're requesting a regrade..."
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">
+                            Additional Context
+                          </label>
+                          <textarea
+                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            rows={3}
+                            value={regradeContext}
+                            onChange={(e) => setRegradeContext(e.target.value)}
+                            placeholder="Provide any additional context..."
+                          />
+                        </div>
                       </div>
 
-                      <div className="mt-6 flex justify-end">
+                      <div className="mt-6 flex justify-end space-x-3">
                         <button
-                          className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 ${
-                            uploadingToCanvas
-                              ? "opacity-75 cursor-not-allowed"
-                              : ""
-                          }`}
-                          onClick={handleUploadToCanvas}
-                          disabled={uploadingToCanvas}
+                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                          onClick={() => setShowRegradeModal(false)}
                         >
-                          {uploadingToCanvas ? (
-                            <>
-                              <Loader2 className="animate-spin h-5 w-5 mr-2" />
-                              Uploading...
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="h-5 w-5 mr-2" />
-                              Upload Grades
-                            </>
-                          )}
+                          Cancel
+                        </button>
+                        <button
+                          className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700"
+                          onClick={handleRegradeRequest}
+                        >
+                          Submit Request
                         </button>
                       </div>
-                    </>
-                  ) : (
-                    <div className="text-center py-8">
-                      <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-                        <CheckCircle className="h-6 w-6 text-green-600" />
-                      </div>
-                      <h3 className="mt-4 text-lg font-medium text-gray-900">
-                        Upload Complete
-                      </h3>
-                      <p className="mt-1 text-sm text-gray-500">
-                        All grades have been successfully uploaded to Canvas
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {showRegradeModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 max-w-lg w-full">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold">Request Regrade</h3>
-                    <button
-                      className="text-gray-400 hover:text-gray-500"
-                      onClick={() => setShowRegradeModal(false)}
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Reason for Regrade
-                      </label>
-                      <textarea
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        rows={3}
-                        value={regradeReason}
-                        onChange={(e) => setRegradeReason(e.target.value)}
-                        placeholder="Explain why you're requesting a regrade..."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Additional Context
-                      </label>
-                      <textarea
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        rows={3}
-                        value={regradeContext}
-                        onChange={(e) => setRegradeContext(e.target.value)}
-                        placeholder="Provide any additional context..."
-                      />
                     </div>
                   </div>
-
-                  <div className="mt-6 flex justify-end space-x-3">
-                    <button
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                      onClick={() => setShowRegradeModal(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700"
-                      onClick={handleRegradeRequest}
-                    >
-                      Submit Request
-                    </button>
-                  </div>
-                </div>
-              </div>
+                )}
+              </>
             )}
           </>
         )}

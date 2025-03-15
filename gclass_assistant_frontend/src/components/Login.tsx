@@ -1,45 +1,43 @@
-import { GoogleLogin } from "@react-oauth/google";
-
+import { useGoogleLogin } from "@react-oauth/google";
+import { useAuth } from "../context/AuthContext";
 const Login = () => {
-  const handleLoginSuccess = async (response: any) => {
-    const credential = response.credential;
-    //const credential = "hi";
-    console.log("Raw authorization code", credential);
-
+  const { setIsAuthenticated, setUser } = useAuth();
+  const handleLoginSuccess = async (codeResponse: any) => {
+    // Instead of an ID token, you'll now get an authorization code
+    console.log("Authorization Code:", codeResponse.code);
+    // Send this code to your backend for exchange
     try {
-      const res = await fetch("http://127.0.0.1:8000/auth/google", {
+      const res = await fetch("http://127.0.0.1:8000/auth/google/code", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: credential }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code: codeResponse.code }),
       });
 
       const data = await res.json();
-      console.log("Backend Response:", data);
-
-      if (data.token) {
-        localStorage.setItem("session_token", data.token); // Store JWT
-      }
+      console.log("Backend Response name:", data.user.name);
+      setIsAuthenticated(true);
+      setUser({
+        name: data.user.name,
+        email: data.user.email,
+      });
     } catch (error) {
-      console.error("Error sending token to backend:", error);
+      console.error("Error sending authorization code to backend:", error);
     }
   };
 
+  const login = useGoogleLogin({
+    flow: "auth-code", // Tell it to use the code flow
+    scope:
+      "openid profile email https://www.googleapis.com/auth/classroom.courses https://www.googleapis.com/auth/classroom.rosters",
+    onSuccess: handleLoginSuccess,
+    onError: (error) => console.log("Login Failed", error),
+  });
+
   return (
     <div>
-      <h2>Sign in with Google</h2>
-      <GoogleLogin
-        onSuccess={handleLoginSuccess}
-        onError={() => console.log("Login Failed")}
-        useOneTap
-        access_type="offline" // Request offline access to get a refresh token
-        prompt="consent"
-        response_type="code" // Request an authorization code instead of an ID token
-        scope="
-    openid
-    profile
-    email
-    https://www.googleapis.com/auth/classroom.coursework.students https://www.googleapis.com/auth/classroom.courses https://www.googleapis.com/auth/classroom.coursework.me https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/classroom.rosters"
-      />
+      <button onClick={() => login()}>Login with Google</button>
     </div>
   );
 };
