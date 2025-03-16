@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import requests
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+from helpers import get_user_name_and_email
 # Create database tables if they don't exist
 Base.metadata.create_all(bind=engine)
 
@@ -209,9 +210,27 @@ def get_classroom_assignments(email: str, course_id: str, db: Session = Depends(
     # Build Classroom service
     try:
         service = build('classroom', 'v1', credentials=creds)
-        assignments_response = service.courses().get(courseId=course_id).execute()
-        assignments = assignments_response.get("assignments", [])
-        return {"assignments": assignments}
+        assignments_response = service.courses().courseWork().list(courseId=course_id).execute()
+        assignments = assignments_response.get("courseWork", [])
+        #get the assignment title, id, due date, max points
+        assignments_list = []
+        for assignment in assignments:
+            assignment_title = assignment.get("title")
+            assignment_id = assignment.get("id")
+            assignment_due_date = assignment.get("dueDate")
+            if assignment_due_date:
+                # Break the due date into year-month-day
+                assignment_due_date = f"{assignment_due_date.get('year')}-{assignment_due_date.get('month')}-{assignment_due_date.get('day')}"
+            else: #if there is no due date, set it to "No due date"
+                assignment_due_date = "No due date"
+            assignment_max_points = assignment.get("maxPoints")
+            assignments_list.append({
+                "title": assignment_title,
+                "id": assignment_id,
+                "due_date": assignment_due_date,
+                "max_points": assignment_max_points
+            })
+        return {"assignments": assignments_list}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error accessing Classroom API: {e}")  
 
@@ -247,9 +266,41 @@ def get_classroom_submissions(email: str, assignment_id: str, course_id: str, db
     # Build Classroom service
     try:
         service = build('classroom', 'v1', credentials=creds)
-        submissions_response = service.courses().get(courseId=course_id).execute()
-        submissions = submissions_response.get("submissions", [])
-        return {"submissions": submissions}
+        submissions = []  # Initialize submissions list outside the loop
+        page_token = None  # Initialize page token for pagination
+        submissions_list = []  # Initialize submissions_list outside the loop
+        assignment_name = service.courses().courseWork().get(courseId=course_id, id=assignment_id).execute().get('title', 'Unknown Assignment')
+        while True:
+            # Call the Classroom API to list student submissions for the specified coursework
+            submission_response = service.courses().courseWork().studentSubmissions().list(
+                courseId=course_id,
+                courseWorkId=assignment_id,
+                pageToken=page_token
+            ).execute()
+            submissions.extend(submission_response.get('studentSubmissions', []))  # Add submissions to the list
+            page_token = submission_response.get('nextPageToken')  # Get the next page token
+            if not page_token:
+                break  # Exit the loop if there are no more pages
+           
+            #submissions = submission_response.get("submissions", [])
+        if not submissions:
+            return {"message": "No submissions found", "assignment_name": assignment_name, "submissions": []}
+
+        for submission in submissions:
+            user_id = submission.get('userId', 'Unknown')  # Get the user ID with default
+            student_name, student_email = get_user_name_and_email(service, user_id)  # Get the user's name
+            submission_data = {
+                "student_name": student_name,
+                "student_email": student_email,
+                "submission_id": submission.get('id', 'Unknown'),
+                "submission_title": submission.get("assignmentSubmission", {}).get("attachments", [{}])[0].get("driveFile", {}).get("title", "No title"),
+                "submission_link": submission.get("assignmentSubmission", {}).get("attachments", [{}])[0].get("driveFile", {}).get("alternateLink", "No link"),
+                "submission_date": submission.get("creationTime", "No date"),
+                "submission_status": submission.get("state", "No status"),
+                "submission_score": submission.get("courseWorkType", "No score")
+            }
+            submissions_list.append(submission_data)
+        return {"assignment_name": assignment_name, "submissions": submissions_list}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error accessing Classroom API: {e}")
     

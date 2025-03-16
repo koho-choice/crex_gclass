@@ -21,6 +21,9 @@ import {
 import Login from "./components/Login";
 import { useAuth } from "./context/AuthContext";
 import Courses from "./components/Courses";
+import Assignments from "./components/Assignments";
+import Submissions from "./components/Submissions";
+
 type RubricCriterion = {
   id: string;
   name: string;
@@ -90,6 +93,9 @@ function App() {
   const userName = user?.name;
   const [selectedAssignment, setSelectedAssignment] =
     useState<Assignment | null>(null);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<
+    string | null
+  >(null);
   const [gradingStatus, setGradingStatus] = useState<GradingStatus>("pending");
   const [showRegradeModal, setShowRegradeModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -105,7 +111,7 @@ function App() {
   const [hideUnmatched, setHideUnmatched] = useState(false);
   const [showFeedback, setShowFeedback] = useState<string | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const mockRubric: RubricCriterion[] = [
     {
       id: "thesis",
@@ -645,264 +651,34 @@ function App() {
           </div>
         ) : (
           <>
-            {!selectedCourse ? (
-              <Courses />
+            {!selectedCourseId ? (
+              <Courses
+                onCourseSelect={(courseId: string) =>
+                  setSelectedCourseId(courseId)
+                }
+              />
             ) : (
               <>
                 <div className="bg-white rounded-lg shadow p-6 mb-8">
                   <button
                     className="text-sm text-indigo-600 hover:text-indigo-800 mb-4"
-                    onClick={() => setSelectedCourse(null)}
+                    onClick={() => setSelectedCourseId(null)}
                   >
                     &larr; Back to Courses
                   </button>
-                  <h2 className="text-lg font-semibold mb-4">
-                    Select Assignment
-                  </h2>
-                  <div className="grid gap-4">
-                    {mockAssignments.map((assignment) => (
-                      <div
-                        key={assignment.id}
-                        className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                          selectedAssignment?.id === assignment.id
-                            ? "border-indigo-500 bg-indigo-50"
-                            : "border-gray-200 hover:border-indigo-300"
-                        }`}
-                        onClick={() => setSelectedAssignment(assignment)}
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <h3 className="font-medium text-gray-900">
-                              {assignment.title}
-                            </h3>
-                            <p className="text-sm text-gray-500">
-                              {assignment.subject} • Due: {assignment.dueDate}
-                            </p>
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {assignment.submissions.length} submissions
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <Assignments
+                    courseId={selectedCourseId}
+                    onAssignmentSelect={(assignmentId: string) =>
+                      setSelectedAssignmentId(assignmentId)
+                    }
+                  />
                 </div>
 
-                {selectedAssignment && (
-                  <div className="bg-white rounded-lg shadow p-6 mb-8">
-                    <div className="flex justify-between items-start mb-6">
-                      <div>
-                        <h2 className="text-xl font-semibold text-gray-900">
-                          {selectedAssignment.title}
-                        </h2>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {selectedAssignment.subject} • Due:{" "}
-                          {selectedAssignment.dueDate}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <button
-                          className="text-sm text-indigo-600 hover:text-indigo-800"
-                          onClick={selectAllSubmissions}
-                        >
-                          Select All
-                        </button>
-                        <button
-                          className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md ${
-                            getSelectedCount() > 0
-                              ? "text-white bg-indigo-600 hover:bg-indigo-700"
-                              : "text-gray-400 bg-gray-100 cursor-not-allowed"
-                          }`}
-                          onClick={handleGradeSubmissions}
-                          disabled={getSelectedCount() === 0}
-                        >
-                          <FileCheck className="mr-2 h-5 w-5" />
-                          Grade Selected ({getSelectedCount()})
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="border-t pt-6">
-                      <h3 className="text-lg font-medium mb-4">Submissions</h3>
-                      <div className="space-y-4">
-                        {selectedAssignment.submissions.map((submission) => (
-                          <div
-                            key={submission.id}
-                            className={`border rounded-lg p-4 transition-colors ${
-                              submission.selected
-                                ? "border-indigo-500 bg-indigo-50"
-                                : "border-gray-200"
-                            }`}
-                          >
-                            <div className="flex justify-between items-start mb-3">
-                              <div className="flex items-start space-x-3">
-                                <input
-                                  type="checkbox"
-                                  checked={submission.selected || false}
-                                  onChange={() =>
-                                    toggleSubmissionSelection(submission.id)
-                                  }
-                                  className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                />
-                                <div>
-                                  <h4 className="font-medium text-gray-900">
-                                    {submission.studentName}
-                                  </h4>
-                                  <p className="text-sm text-gray-500">
-                                    {submission.studentEmail}
-                                  </p>
-                                  <p className="text-sm text-gray-500">
-                                    Submitted:{" "}
-                                    {formatDate(submission.submittedAt)}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center space-x-4">
-                                {submission.grading || submission.regrading ? (
-                                  <div className="flex items-center space-x-2 text-indigo-600">
-                                    <Loader2 className="h-5 w-5 animate-spin" />
-                                    <span className="text-sm">
-                                      {submission.regrading
-                                        ? "Regrading..."
-                                        : "Grading..."}
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <>
-                                    <div className="flex items-center space-x-2">
-                                      <input
-                                        type="number"
-                                        className="w-20 px-3 py-1 border rounded-md"
-                                        value={submission.grade || ""}
-                                        placeholder="Grade"
-                                        readOnly
-                                      />
-                                      {submission.feedback && (
-                                        <button
-                                          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors"
-                                          onClick={() =>
-                                            setShowFeedback(
-                                              showFeedback === submission.id
-                                                ? null
-                                                : submission.id
-                                            )
-                                          }
-                                        >
-                                          <MessageSquare className="h-4 w-4 mr-1" />
-                                          Feedback
-                                          <ChevronRight
-                                            className={`h-4 w-4 ml-1 transform transition-transform ${
-                                              showFeedback === submission.id
-                                                ? "rotate-90"
-                                                : ""
-                                            }`}
-                                          />
-                                        </button>
-                                      )}
-                                    </div>
-                                    <div className="relative">
-                                      <button
-                                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors"
-                                        onClick={() => {
-                                          setCurrentRegradeSubmission(
-                                            submission.id
-                                          );
-                                          setShowRegradeModal(true);
-                                        }}
-                                        onMouseEnter={() =>
-                                          setRegradeHovered(submission.id)
-                                        }
-                                        onMouseLeave={() =>
-                                          setRegradeHovered(null)
-                                        }
-                                      >
-                                        <RefreshCw className="h-4 w-4 mr-1" />
-                                        Request Regrade
-                                      </button>
-                                      {regradeHovered === submission.id && (
-                                        <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded shadow-lg whitespace-nowrap">
-                                          Request AI to regrade this submission
-                                          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-800"></div>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="flex gap-2 ml-7">
-                              {submission.attachments.map(
-                                (attachment, index) => (
-                                  <span
-                                    key={index}
-                                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
-                                  >
-                                    {attachment}
-                                  </span>
-                                )
-                              )}
-                            </div>
-
-                            {showFeedback === submission.id &&
-                              submission.feedback && (
-                                <div className="mt-4 ml-7 bg-gray-50 rounded-lg p-4">
-                                  <h5 className="font-medium text-gray-900 mb-4">
-                                    AI Feedback
-                                  </h5>
-                                  <div className="space-y-6">
-                                    {submission.feedback.map((feedback) => {
-                                      const criterion =
-                                        selectedAssignment.rubric.find(
-                                          (c) => c.id === feedback.criterionId
-                                        );
-                                      return (
-                                        <div
-                                          key={feedback.criterionId}
-                                          className="space-y-2"
-                                        >
-                                          <div className="flex justify-between items-baseline">
-                                            <h6 className="font-medium text-gray-800">
-                                              {criterion?.name}
-                                            </h6>
-                                            <span className="text-sm text-gray-600">
-                                              {feedback.points}/
-                                              {criterion?.maxPoints} points
-                                            </span>
-                                          </div>
-                                          <p className="text-sm text-gray-600">
-                                            {criterion?.description}
-                                          </p>
-                                          <p className="text-sm text-gray-800">
-                                            {feedback.feedback}
-                                          </p>
-                                          {feedback.suggestions.length > 0 && (
-                                            <div className="mt-2">
-                                              <h6 className="text-sm font-medium text-gray-700 mb-1">
-                                                Suggestions for Improvement:
-                                              </h6>
-                                              <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                                                {feedback.suggestions.map(
-                                                  (suggestion, index) => (
-                                                    <li key={index}>
-                                                      {suggestion}
-                                                    </li>
-                                                  )
-                                                )}
-                                              </ul>
-                                            </div>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                {selectedAssignmentId && (
+                  <Submissions
+                    courseId={selectedCourseId}
+                    assignmentId={selectedAssignmentId}
+                  />
                 )}
 
                 {gradingStatus === "completed" && (

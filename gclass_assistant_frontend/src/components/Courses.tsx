@@ -9,7 +9,7 @@ interface Course {
   room: string;
 }
 
-const Courses = () => {
+const Courses = ({ onCourseSelect }) => {
   const { isAuthenticated, user } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,10 +48,19 @@ const Courses = () => {
             key={course.id}
             className="border rounded-lg p-4 cursor-pointer transition-all hover:border-indigo-300 hover:shadow-md"
           >
-            <strong className="text-gray-900">{course.name}</strong>
-            <p className="text-sm text-gray-500">
-              Section: {course.section}, Room: {course.room}
-            </p>
+            <button
+              onClick={() => {
+                onCourseSelect(course.id);
+              }}
+              className="w-full h-full text-left"
+            >
+              <strong className="text-gray-900">
+                {course.name} {course.id}
+              </strong>
+              <p className="text-sm text-gray-500">
+                Section: {course.section}, Room: {course.room}
+              </p>
+            </button>
           </li>
         ))}
       </ul>
