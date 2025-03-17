@@ -237,6 +237,11 @@ const Submissions: React.FC<SubmissionsProps> = ({
           });
 
           fetchGradingResults(submissionId);
+        } else if (status.includes("failed")) {
+          clearInterval(pollInterval);
+          console.error(`Grading failed for submission ${submissionId}`);
+          setError(`Grading failed for submission ${submissionId}`);
+          setGradingInProgress(false);
         }
       } catch (error) {
         console.error("Error checking grading status:", error);
