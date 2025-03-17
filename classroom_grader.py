@@ -237,7 +237,7 @@ def print_assignment_contents(service, course_id, assignment_id):
 
 # %% using the rubric and calling the function
 from rubric_extractor import parse_rubric
-rubric = parse_rubric(r'/Users/davidooooo/Downloads/etl_rubric.xlsx')
+rubric = parse_rubric()
 # Example usage
 course_id = '755236001841'
 assignment_id = '757850561158'

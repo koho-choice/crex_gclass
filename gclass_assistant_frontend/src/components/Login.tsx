@@ -16,7 +16,7 @@ const Login = () => {
       });
 
       const data = await res.json();
-      console.log("Backend Response name:", data.user.name);
+      console.log("Backend Response name:", data);
       setIsAuthenticated(true);
       setUser({
         name: data.user.name,

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from pydantic import BaseModel
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
@@ -9,13 +9,17 @@ import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import func, cast, LargeBinary, String
 #Database imports
-from database import engine, Base, get_db
-from models import User
+from database import engine, Base, get_db, SessionLocal
+from models import User, GradedSubmission
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from helpers import get_user_name_and_email
+from helpers import get_user_name_and_email, grade_assignment_contents, download_file
+from docx import Document  # Importing Document from python-docx to handle Word documents
+from rubric_extractor import parse_rubric
+import uuid
+
 # Create database tables if they don't exist
 Base.metadata.create_all(bind=engine)
 
@@ -24,7 +28,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5173"],  # Adjust based on your frontend's origin
+    allow_origins=["http://127.0.0.1:5173", "http://localhost:5173"],  # Adjust based on your frontend's origin
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -304,4 +308,105 @@ def get_classroom_submissions(email: str, assignment_id: str, course_id: str, db
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error accessing Classroom API: {e}")
     
+#Endpoint to grade each assignment submission
+task_status = {}
 
+@app.post("/classroom/grade_submission")
+def grade_submission(email: str, assignment_id: str, course_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    # Generate a unique task ID
+    task_id = str(uuid.uuid4())
+    task_status[task_id] = "in progress"
+    
+    # Retrieve user from the DB
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Decrypt tokens
+    decrypted_access_token = db.query(
+        cast(func.pgp_sym_decrypt(User.access_token, PG_SECRET), String)
+    ).filter(User.id == user.id).scalar()
+    
+    decrypted_refresh_token = db.query(
+        cast(func.pgp_sym_decrypt(User.refresh_token, PG_SECRET), String)
+    ).filter(User.id == user.id).scalar()
+    
+    if not decrypted_access_token:
+        raise HTTPException(status_code=400, detail="Access token could not be decrypted")
+    
+    # Create credentials
+    creds = Credentials(
+        token=decrypted_access_token,
+        refresh_token=decrypted_refresh_token,
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+    )
+
+    # Add the grading task to the background
+    background_tasks.add_task(grade_assignment, creds, course_id, assignment_id, task_id)
+    
+    return {"message": "Grading in progress", "task_id": task_id}
+
+def grade_assignment(creds, course_id, assignment_id, task_id):
+    try:
+        service = build('classroom', 'v1', credentials=creds)
+        
+        # Get the rubric
+        rubric = parse_rubric()
+        
+        # Grade the submission
+        graded_submissions = grade_assignment_contents(service, course_id, assignment_id, rubric, creds)
+        # Obtain a valid database session:
+        with SessionLocal() as db_session:
+            store_graded_results(graded_submissions, db_session)
+        # Update task status
+        task_status[task_id] = "completed"
+    except Exception as e:
+        # Update task status on failure
+        task_status[task_id] = f"failed: {e}"
+        print(f"Error accessing Classroom API: {e}")
+
+@app.get("/classroom/task_status/{task_id}")
+def get_task_status(task_id: str):
+    status = task_status.get(task_id)
+    if not status:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return {"task_id": task_id, "status": status}
+    
+def store_graded_results(graded_results, db_session, graded_by_id=None):
+    # The first item contains assignment-level data.
+    assignment_info = graded_results[0]
+    assignment_id = assignment_info.get("assignment_id")
+    assignment_name = assignment_info.get("assignment_name")
+    
+    # Loop over the student results (skipping the first item)
+    for student_result in graded_results[1:]:
+        student_name = student_result.get("student")
+        grade_results = student_result.get("grade_result", {})
+        points_received = grade_results.get("points_received")
+        points_possible = grade_results.get("points_possible")
+        rubric_breakdown = grade_results.get("rubric_breakdown")
+        explanation = grade_results.get("explanation")
+        
+        #print(f"Student Result: {student_result}")
+        
+        # Create a new graded submission record
+        record = GradedSubmission(
+            assignment_id=assignment_id,
+            assignment_name=assignment_name,
+            student_name=student_name,
+            points_received=points_received,
+            points_possible=points_possible,
+            rubric_breakdown=str(rubric_breakdown),  # or json.dumps if it's JSON
+            explanation=explanation,
+        )
+        db_session.add(record)
+    
+    db_session.commit()
+@app.get("/classroom/graded_submissions")
+def get_graded_submissions(assignment_id: str, db: Session = Depends(get_db)):
+    submissions = db.query(GradedSubmission).filter(GradedSubmission.assignment_id == assignment_id).all()
+    return {"graded_submissions": submissions}
+    
+    

@@ -13,8 +13,7 @@ Created on Sat Mar  8 13:59:30 2025
 #%%
 import pandas as pd
 import json
-file_path = r"/Users/davidooooo/Downloads/etl_rubric.xlsx"
-def parse_rubric(file_path, start_row=2):
+def parse_rubric(file_path=r"/Users/davidooooo/Downloads/etl_rubric.xlsx", start_row=2):
     """
     Parses the rubric file based on the following pattern:
     
