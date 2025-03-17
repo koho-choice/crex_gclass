@@ -9,7 +9,7 @@ BASE_URL = "http://127.0.0.1:8000"
 email = "davidogundipe@gmail.com"
 assignment_id = "757850561158"
 course_id = "755236001841"
-
+submission_ids = ["Cg4IiZf9vP0VEIa1p5uHFg"]
 def test_grade_submission():
     # Make the POST request to the grade_submission endpoint
     response = requests.post(
@@ -18,6 +18,9 @@ def test_grade_submission():
             "email": email,
             "assignment_id": assignment_id,
             "course_id": course_id
+        },
+        json={
+            "submission_ids": submission_ids
         }
     )
 

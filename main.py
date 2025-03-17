@@ -19,7 +19,9 @@ from helpers import get_user_name_and_email, grade_assignment_contents, download
 from docx import Document  # Importing Document from python-docx to handle Word documents
 from rubric_extractor import parse_rubric
 import uuid
-
+import io
+import googleapiclient.http
+from typing import Optional, List
 # Create database tables if they don't exist
 Base.metadata.create_all(bind=engine)
 
@@ -311,8 +313,21 @@ def get_classroom_submissions(email: str, assignment_id: str, course_id: str, db
 #Endpoint to grade each assignment submission
 task_status = {}
 
+# Define a Pydantic model for the request body
+class GradeSubmissionRequest(BaseModel):
+    submission_ids: Optional[List[str]] = None
+    rubric: str
+
 @app.post("/classroom/grade_submission")
-def grade_submission(email: str, assignment_id: str, course_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+def grade_submission(
+    email: str, 
+    assignment_id: str, 
+    course_id: str, 
+    background_tasks: BackgroundTasks, 
+    db: Session = Depends(get_db), 
+    request: GradeSubmissionRequest = None
+):
+    submission_ids = request.submission_ids if request else None
     # Generate a unique task ID
     task_id = str(uuid.uuid4())
     task_status[task_id] = "in progress"
@@ -343,20 +358,62 @@ def grade_submission(email: str, assignment_id: str, course_id: str, background_
         client_secret=GOOGLE_CLIENT_SECRET,
     )
 
-    # Add the grading task to the background
-    background_tasks.add_task(grade_assignment, creds, course_id, assignment_id, task_id)
+    # Add the grading task to the background, passing submission_ids
+    background_tasks.add_task(grade_assignment, creds, course_id, assignment_id, task_id, submission_ids=submission_ids, rubric=request.rubric)
     
     return {"message": "Grading in progress", "task_id": task_id}
 
-def grade_assignment(creds, course_id, assignment_id, task_id):
+def grade_assignment(creds, course_id, assignment_id, task_id, submission_ids=None, rubric=None):
     try:
         service = build('classroom', 'v1', credentials=creds)
         
+        # Build the Drive API service
+        drive_service = build('drive', 'v3', credentials=creds)
+        
+        # Get file metadata to determine MIME type
+        file_metadata = drive_service.files().get(fileId=rubric, fields='mimeType').execute()
+        mime_type = file_metadata.get("mimeType")
+
+        # Define the export MIME type if needed
+        export_mime_type = None
+        if mime_type == "application/vnd.google-apps.spreadsheet":
+            # Export Google Sheets as XLSX
+            export_mime_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        elif mime_type == "application/vnd.google-apps.document":
+            # Export Google Docs as PDF or Word docx, but for rubric use XLSX might be expected.
+            # Adjust accordingly if needed.
+            export_mime_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        # Add other cases if needed
+
+        file_data = io.BytesIO()
+        if export_mime_type:
+            # Use export_media for Google Docs editors files
+            request = drive_service.files().export_media(fileId=rubric, mimeType=export_mime_type)
+        else:
+            # For non-Google Docs files (already binary), use get_media
+            request = drive_service.files().get_media(fileId=rubric)
+            
+        downloader = googleapiclient.http.MediaIoBaseDownload(file_data, request)
+        done = False
+        while not done:
+            status, done = downloader.next_chunk()
+            print(f"Download {int(status.progress() * 100)}%.")
+        
+        # Reset the pointer to the beginning of the BytesIO object
+        file_data.seek(0)
         # Get the rubric
-        rubric = parse_rubric()
+        print(f"File data: {file_data}")
+        rubric = parse_rubric(file_data)
         
         # Grade the submission
-        graded_submissions = grade_assignment_contents(service, course_id, assignment_id, rubric, creds)
+        graded_submissions = grade_assignment_contents(
+            service, 
+            course_id, 
+            assignment_id, 
+            rubric, 
+            creds, 
+            submission_ids=submission_ids  # Pass the submission_ids to the grading function
+        )
         # Obtain a valid database session:
         with SessionLocal() as db_session:
             store_graded_results(graded_submissions, db_session)
@@ -383,6 +440,7 @@ def store_graded_results(graded_results, db_session, graded_by_id=None):
     # Loop over the student results (skipping the first item)
     for student_result in graded_results[1:]:
         student_name = student_result.get("student")
+        submission_id = student_result.get("submission_id")
         grade_results = student_result.get("grade_result", {})
         points_received = grade_results.get("points_received")
         points_possible = grade_results.get("points_possible")
@@ -400,13 +458,35 @@ def store_graded_results(graded_results, db_session, graded_by_id=None):
             points_possible=points_possible,
             rubric_breakdown=str(rubric_breakdown),  # or json.dumps if it's JSON
             explanation=explanation,
+            submission_id=submission_id
         )
         db_session.add(record)
     
     db_session.commit()
 @app.get("/classroom/graded_submissions")
-def get_graded_submissions(assignment_id: str, db: Session = Depends(get_db)):
-    submissions = db.query(GradedSubmission).filter(GradedSubmission.assignment_id == assignment_id).all()
-    return {"graded_submissions": submissions}
-    
+def get_graded_submissions(submission_id: str, db: Session = Depends(get_db)):
+    # Get the latest grading result for the given submission ID
+    try:
+        submission = db.query(GradedSubmission).filter(GradedSubmission.submission_id == submission_id).order_by(GradedSubmission.graded_at.desc()).first()
+        return {"latest_graded_submission": submission}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error accessing database: {e}")
+   
+   
+# Need a secure endpoint to get the decrypted access token and refresh token
+@app.get("/classroom/access_token")
+def get_access_token(email: str, db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        decrypted_access_token = db.query(
+            cast(func.pgp_sym_decrypt(User.access_token, PG_SECRET), String)
+        ).filter(User.id == user.id).scalar()
+        decrypted_refresh_token = db.query(
+            cast(func.pgp_sym_decrypt(User.refresh_token, PG_SECRET), String)
+        ).filter(User.id == user.id).scalar()
+        return {"access_token": decrypted_access_token, "refresh_token": decrypted_refresh_token}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error accessing database: {e}")
     

@@ -23,7 +23,8 @@ class GradedSubmission(Base):
     points_possible = Column(Float)
     rubric_breakdown = Column(Text)  # Consider storing as a JSON string if needed
     explanation = Column(Text)
-    graded_at = Column(DateTime, default=datetime.now(timezone.utc))
-
+    graded_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    # Add a column for submission_id
+    submission_id = Column(String, index=True)
     # Relationship: Each graded submission is linked to a user (student)
    

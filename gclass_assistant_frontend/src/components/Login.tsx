@@ -1,11 +1,12 @@
 import { useGoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../context/AuthContext";
+import { LogIn } from "lucide-react";
+
 const Login = () => {
   const { setIsAuthenticated, setUser } = useAuth();
+
   const handleLoginSuccess = async (codeResponse: any) => {
-    // Instead of an ID token, you'll now get an authorization code
     console.log("Authorization Code:", codeResponse.code);
-    // Send this code to your backend for exchange
     try {
       const res = await fetch("http://127.0.0.1:8000/auth/google/code", {
         method: "POST",
@@ -28,7 +29,7 @@ const Login = () => {
   };
 
   const login = useGoogleLogin({
-    flow: "auth-code", // Tell it to use the code flow
+    flow: "auth-code",
     scope:
       "openid profile email https://www.googleapis.com/auth/classroom.courses https://www.googleapis.com/auth/classroom.rosters https://www.googleapis.com/auth/classroom.coursework.students https://www.googleapis.com/auth/classroom.coursework.me https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/classroom.profile.emails ",
     onSuccess: handleLoginSuccess,
@@ -36,8 +37,14 @@ const Login = () => {
   });
 
   return (
-    <div>
-      <button onClick={() => login()}>Login with Google</button>
+    <div className="flex items-center justify-center">
+      <button
+        onClick={() => login()}
+        className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
+      >
+        <LogIn className="h-5 w-5 mr-2" />
+        Connect with Google Classroom
+      </button>
     </div>
   );
 };

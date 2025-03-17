@@ -614,7 +614,7 @@ function App() {
             <div className="flex items-center">
               <BookOpen className="h-8 w-8 text-indigo-600" />
               <h1 className="ml-3 text-2xl font-bold text-gray-900">
-                AI Grading Assistant
+                Crex Classroom Assistant
               </h1>
             </div>
             {!isAuthenticated ? (
@@ -643,7 +643,7 @@ function App() {
           <div className="text-center py-12">
             <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
             <h2 className="mt-2 text-lg font-medium text-gray-900">
-              Welcome to AI Grading Assistant
+              Welcome to Crex Classroom Assistant
             </h2>
             <p className="mt-1 text-sm text-gray-500">
               Connect with Google Classroom to get started

@@ -10,9 +10,13 @@ Created on Sat Mar  8 13:59:30 2025
 
 
 
-#%%
 import pandas as pd
+
+
+
+#%%
 import json
+
 def parse_rubric(file_path=r"/Users/davidooooo/Downloads/etl_rubric.xlsx", start_row=2):
     """
     Parses the rubric file based on the following pattern:
@@ -36,8 +40,15 @@ def parse_rubric(file_path=r"/Users/davidooooo/Downloads/etl_rubric.xlsx", start
     Returns:
         str: A JSON-formatted string representing the parsed rubric.
     """
+
+    # You're goint to run io operations to get the rubric
+    # file_path will become a file id
     # Read the Excel file without assuming a header row.
+
+   
+    
     df = pd.read_excel(file_path, header=None)
+
     criteria = []
     num_rows, num_cols = df.shape
     

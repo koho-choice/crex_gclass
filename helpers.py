@@ -38,9 +38,10 @@ def reformat_name(full_name):
     return full_name  # Return unchanged if format is unexpected
 
 # Function to grade the assignment contents
-def grade_assignment_contents(service, course_id, assignment_id, rubric, creds):
+def grade_assignment_contents(service, course_id, assignment_id, rubric=None, creds=None, submission_ids=None):
     # Get the rubric
-    rubric = parse_rubric()
+    if rubric is None:
+        rubric = parse_rubric()
     submissions = []  # Initialize an empty list to store submissions
     page_token = None  # Initialize page token for pagination
     while True:
@@ -50,6 +51,11 @@ def grade_assignment_contents(service, course_id, assignment_id, rubric, creds):
             courseWorkId=assignment_id,
             pageToken=page_token
         ).execute()
+        
+        # Filter submissions if submission_ids is provided
+        if submission_ids:
+            submission_response['studentSubmissions'] = [sub for sub in submission_response['studentSubmissions'] if sub.get('id') in submission_ids]
+
         submissions.extend(submission_response.get('studentSubmissions', []))  # Add submissions to the list
         page_token = submission_response.get('nextPageToken')  # Get the next page token
         if not page_token:
@@ -57,7 +63,7 @@ def grade_assignment_contents(service, course_id, assignment_id, rubric, creds):
     assignment_name = service.courses().courseWork().get(courseId=course_id, id=assignment_id).execute().get('title', 'Unknown Assignment')
     graded_submissions = [{"assignment_name": assignment_name, "assignment_id": assignment_id}]  # Initialize a list to store graded submissions
     for submission in submissions:
-        
+        submission_id = submission.get('id')  # Get the submission ID
         user_id = submission.get('userId')  # Get the user ID
         user_name, user_email = get_user_name_and_email(service, user_id)  # Get the user's name
         attachments = submission.get('assignmentSubmission', {}).get('attachments', [])
@@ -84,6 +90,7 @@ def grade_assignment_contents(service, course_id, assignment_id, rubric, creds):
                     # Store the grade result, user name, assignment name, and ID in the list
                     graded_submissions.append({
                         "student": reformat_name(user_name),
+                        "submission_id": submission_id,
                         "grade_result": grade.__dict__
                     })
     return graded_submissions
