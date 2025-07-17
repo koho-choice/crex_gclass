@@ -1,0 +1,67 @@
+{
+  "assignments": [
+    {
+      "id": "1",
+      "assignmentName": "Photosynthesis Essay",
+      "dueDate": "2024-03-15",
+      "totalStudents": 25,
+      "submitted": 23,
+      "averageScore": 78.4,
+      "gradeDistribution": {
+        "A": 4,
+        "B": 10,
+        "C": 7,
+        "D": 3,
+        "F": 1
+      },
+      "rubric": [
+        { "criterion": "Clarity & Organization", "avgScore": 2.8, "maxScore": 4 },
+        { "criterion": "Scientific Evidence", "avgScore": 1.9, "maxScore": 4 },
+        { "criterion": "Grammar & Mechanics", "avgScore": 3.5, "maxScore": 4 },
+        { "criterion": "Critical Analysis", "avgScore": 2.1, "maxScore": 4 }
+      ]
+    },
+    {
+      "id": "2",
+      "assignmentName": "Cell Structure Lab Report",
+      "dueDate": "2024-03-08",
+      "totalStudents": 25,
+      "submitted": 25,
+      "averageScore": 82.1,
+      "gradeDistribution": {
+        "A": 6,
+        "B": 12,
+        "C": 5,
+        "D": 2,
+        "F": 0
+      },
+      "rubric": [
+        { "criterion": "Data Collection", "avgScore": 3.2, "maxScore": 4 },
+        { "criterion": "Analysis & Interpretation", "avgScore": 2.9, "maxScore": 4 },
+        { "criterion": "Lab Procedures", "avgScore": 3.6, "maxScore": 4 },
+        { "criterion": "Conclusion", "avgScore": 2.7, "maxScore": 4 }
+      ]
+    },
+    {
+      "id": "3",
+      "assignmentName": "Ecosystem Food Web Project",
+      "dueDate": "2024-02-28",
+      "totalStudents": 25,
+      "submitted": 24,
+      "averageScore": 85.7,
+      "gradeDistribution": {
+        "A": 8,
+        "B": 11,
+        "C": 4,
+        "D": 1,
+        "F": 0
+      },
+      "rubric": [
+        { "criterion": "Accuracy of Relationships", "avgScore": 3.4, "maxScore": 4 },
+        { "criterion": "Visual Presentation", "avgScore": 3.6, "maxScore": 4 },
+        { "criterion": "Research Quality", "avgScore": 3.1, "maxScore": 4 },
+        { "criterion": "Creativity", "avgScore": 3.8, "maxScore": 4 }
+      ]
+    }
+  ]
+}

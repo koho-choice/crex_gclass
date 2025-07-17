@@ -1,0 +1,53 @@
+{
+  "classProjection": [
+    { "week": 1, "avgScore": 72.3, "date": "2024-02-05" },
+    { "week": 2, "avgScore": 74.1, "date": "2024-02-12" },
+    { "week": 3, "avgScore": 76.8, "date": "2024-02-19" },
+    { "week": 4, "avgScore": 78.4, "date": "2024-02-26" },
+    { "week": 5, "avgScore": 80.2, "date": "2024-03-05" },
+    { "week": 6, "avgScore": 82.1, "date": "2024-03-12" }
+  ],
+  "targetScore": 85,
+  "benchmarkDate": "2024-04-15",
+  "projectedScore": 84.7,
+  "improvementNeeded": 2.9,
+  "classStats": {
+    "totalStudents": 25,
+    "onTrackStudents": 18,
+    "atRiskStudents": 5,
+    "excellingStudents": 7,
+    "averageImprovement": 1.8
+  },
+  "skillAreas": [
+    {
+      "skill": "Scientific Method",
+      "currentLevel": 78,
+      "targetLevel": 85,
+      "status": "needs_improvement"
+    },
+    {
+      "skill": "Data Analysis",
+      "currentLevel": 82,
+      "targetLevel": 85,
+      "status": "on_track"
+    },
+    {
+      "skill": "Lab Safety",
+      "currentLevel": 91,
+      "targetLevel": 85,
+      "status": "exceeding"
+    },
+    {
+      "skill": "Critical Thinking",
+      "currentLevel": 75,
+      "targetLevel": 85,
+      "status": "needs_improvement"
+    },
+    {
+      "skill": "Written Communication",
+      "currentLevel": 79,
+      "targetLevel": 85,
+      "status": "needs_improvement"
+    }
+  ]
+}

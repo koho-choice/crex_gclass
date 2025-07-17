@@ -1,0 +1,144 @@
+{
+  "students": [
+    {
+      "id": "1",
+      "name": "Emma Thompson",
+      "email": "emma.t@school.edu",
+      "avgScore": 92.3,
+      "trend": "up",
+      "status": "Excelling",
+      "assignments": [
+        { "assignmentId": "1", "score": 95, "submitted": true },
+        { "assignmentId": "2", "score": 88, "submitted": true },
+        { "assignmentId": "3", "score": 94, "submitted": true }
+      ],
+      "recentScores": [85, 88, 91, 92, 95]
+    },
+    {
+      "id": "2",
+      "name": "Michael Chen",
+      "email": "michael.c@school.edu",
+      "avgScore": 88.7,
+      "trend": "up",
+      "status": "Excelling",
+      "assignments": [
+        { "assignmentId": "1", "score": 92, "submitted": true },
+        { "assignmentId": "2", "score": 86, "submitted": true },
+        { "assignmentId": "3", "score": 88, "submitted": true }
+      ],
+      "recentScores": [82, 84, 86, 88, 92]
+    },
+    {
+      "id": "3",
+      "name": "Sarah Johnson",
+      "email": "sarah.j@school.edu",
+      "avgScore": 76.4,
+      "trend": "flat",
+      "status": "On Track",
+      "assignments": [
+        { "assignmentId": "1", "score": 78, "submitted": true },
+        { "assignmentId": "2", "score": 75, "submitted": true },
+        { "assignmentId": "3", "score": 76, "submitted": true }
+      ],
+      "recentScores": [74, 76, 75, 78, 76]
+    },
+    {
+      "id": "4",
+      "name": "David Wilson",
+      "email": "david.w@school.edu",
+      "avgScore": 82.1,
+      "trend": "up",
+      "status": "On Track",
+      "assignments": [
+        { "assignmentId": "1", "score": 85, "submitted": true },
+        { "assignmentId": "2", "score": 80, "submitted": true },
+        { "assignmentId": "3", "score": 81, "submitted": true }
+      ],
+      "recentScores": [78, 79, 80, 82, 85]
+    },
+    {
+      "id": "5",
+      "name": "Lisa Garcia",
+      "email": "lisa.g@school.edu",
+      "avgScore": 94.2,
+      "trend": "up",
+      "status": "Excelling",
+      "assignments": [
+        { "assignmentId": "1", "score": 96, "submitted": true },
+        { "assignmentId": "2", "score": 93, "submitted": true },
+        { "assignmentId": "3", "score": 94, "submitted": true }
+      ],
+      "recentScores": [90, 92, 93, 94, 96]
+    },
+    {
+      "id": "6",
+      "name": "James Rodriguez",
+      "email": "james.r@school.edu",
+      "avgScore": 65.8,
+      "trend": "down",
+      "status": "At Risk",
+      "assignments": [
+        { "assignmentId": "1", "score": 62, "submitted": true },
+        { "assignmentId": "2", "score": 68, "submitted": true },
+        { "assignmentId": "3", "score": 67, "submitted": true }
+      ],
+      "recentScores": [72, 70, 68, 65, 62]
+    },
+    {
+      "id": "7",
+      "name": "Ashley Kim",
+      "email": "ashley.k@school.edu",
+      "avgScore": 79.3,
+      "trend": "flat",
+      "status": "On Track",
+      "assignments": [
+        { "assignmentId": "1", "score": 81, "submitted": true },
+        { "assignmentId": "2", "score": 78, "submitted": true },
+        { "assignmentId": "3", "score": 79, "submitted": true }
+      ],
+      "recentScores": [77, 79, 78, 80, 81]
+    },
+    {
+      "id": "8",
+      "name": "Carlos Martinez",
+      "email": "carlos.m@school.edu",
+      "avgScore": 58.2,
+      "trend": "down",
+      "status": "At Risk",
+      "assignments": [
+        { "assignmentId": "1", "score": 55, "submitted": true },
+        { "assignmentId": "2", "score": 62, "submitted": true },
+        { "assignmentId": "3", "score": 58, "submitted": false }
+      ],
+      "recentScores": [65, 62, 60, 58, 55]
+    },
+    {
+      "id": "9",
+      "name": "Rachel Brown",
+      "email": "rachel.b@school.edu",
+      "avgScore": 86.9,
+      "trend": "up",
+      "status": "Excelling",
+      "assignments": [
+        { "assignmentId": "1", "score": 89, "submitted": true },
+        { "assignmentId": "2", "score": 85, "submitted": true },
+        { "assignmentId": "3", "score": 87, "submitted": true }
+      ],
+      "recentScores": [82, 84, 85, 87, 89]
+    },
+    {
+      "id": "10",
+      "name": "Kevin Lee",
+      "email": "kevin.l@school.edu",
+      "avgScore": 73.6,
+      "trend": "flat",
+      "status": "On Track",
+      "assignments": [
+        { "assignmentId": "1", "score": 75, "submitted": true },
+        { "assignmentId": "2", "score": 72, "submitted": true },
+        { "assignmentId": "3", "score": 74, "submitted": true }
+      ],
+      "recentScores": [71, 73, 72, 75, 74]
+    }
+  ]
+}

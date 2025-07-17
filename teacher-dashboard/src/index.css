@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6;
+  }
+  
+  .btn-primary {
+    @apply inline-flex items-center px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors;
+  }
+  
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .status-excelling {
+    @apply status-badge bg-success-100 text-success-800;
+  }
+  
+  .status-on-track {
+    @apply status-badge bg-primary-100 text-primary-800;
+  }
+  
+  .status-at-risk {
+    @apply status-badge bg-warning-100 text-warning-800;
+  }
+  
+  .status-failing {
+    @apply status-badge bg-danger-100 text-danger-800;
+  }
+}
